@@ -119,6 +119,45 @@
             padding: 40px 20px;
             color: #f56c6c;
         }
+
+        .wechat-tip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: none;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        .wechat-tip.show {
+            display: flex;
+        }
+
+        .wechat-tip-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: #333;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .wechat-tip-arrow {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid white;
+            position: absolute;
+            top: 60px;
+            right: 30px;
+        }
     </style>
 </head>
 <body>
@@ -134,6 +173,15 @@
 
         <div class="open-app-btn">
             <a href="#" class="btn" id="openAppBtn">打开 App 查看详情</a>
+        </div>
+
+        <!-- 微信提示蒙层 -->
+        <div class="wechat-tip" id="wechatTip" onclick="this.classList.remove('show')">
+            <div class="wechat-tip-arrow"></div>
+            <div class="wechat-tip-content">
+                <p style="margin: 0; font-weight: 600;">请点击右上角 "..."</p>
+                <p style="margin: 5px 0 0 0;">选择"在浏览器中打开"</p>
+            </div>
         </div>
     </div>
 
@@ -153,9 +201,20 @@
         const openAppBtn = document.getElementById('openAppBtn');
         openAppBtn.href = deepLink;
 
+        // 检测是否在微信中
+        function isWeChat() {
+            return /MicroMessenger/i.test(navigator.userAgent);
+        }
+
         // 添加点击事件处理
         openAppBtn.addEventListener('click', function(e) {
             e.preventDefault();
+
+            // 如果在微信中，显示提示
+            if (isWeChat()) {
+                document.getElementById('wechatTip').classList.add('show');
+                return;
+            }
 
             // 尝试唤起 App
             window.location.href = deepLink;
