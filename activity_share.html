@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>活动详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .info-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .info-item {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            min-width: 80px;
+            font-size: 14px;
+        }
+
+        .info-value {
+            flex: 1;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .open-app-btn {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            color: #f56c6c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="activityTitle">加载中...</h1>
+            <p id="activityGreeting"></p>
+        </div>
+
+        <div class="content" id="contentArea">
+            <div class="loading">正在加载活动详情...</div>
+        </div>
+
+        <div class="open-app-btn">
+            <a href="#" class="btn" id="openAppBtn">打开 App 查看详情</a>
+        </div>
+    </div>
+
+    <script>
+        // 从 URL 获取活动 ID
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        const activityId = getQueryParam('id');
+
+        // 构建 Deep Link
+        const deepLink = `xmyapp://activity/detail?id=${activityId}`;
+
+        // 设置打开 App 按钮
+        document.getElementById('openAppBtn').href = deepLink;
+
+        // 页面加载时尝试自动唤起 App（可选）
+        function tryOpenApp() {
+            // 在微信中，需要用户主动点击才能唤起
+            // 这里只是设置好链接，不自动跳转
+            console.log('Deep Link:', deepLink);
+        }
+
+        // 加载活动数据
+        function loadActivityData() {
+            // 调用后端 API 获取活动详情
+            const apiUrl = `https://xmyreq.xmyyl.cn/sps/activityHall/ssai?storeActivityId=${activityId}`;
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (result.success && result.data) {
+                    const data = result.data;
+
+                    // 处理活动类型
+                    let activityType = '线上';
+                    if (data.activityKind === 1) {
+                        activityType = '集体';
+                    } else if (data.activityKind === 2) {
+                        activityType = '入户';
+                    }
+
+                    // 处理费用类型
+                    const chargeType = data.isCharge === 1 ? '付费' : '公益';
+
+                    displayActivityData({
+                        title: data.title || '活动标题',
+                        greetings: data.greetings || '欢迎参加本次活动',
+                        theme: data.realActivityName || '主题活动',
+                        description: data.description || '活动描述',
+                        time: `${data.activityTimeStr || ''} - ${data.activityEndTimeStr || ''}`,
+                        area: data.area || '活动地点',
+                        type: activityType,
+                        charge: chargeType,
+                        sponsor: data.sponsor || '',
+                        ask: data.ask || ''
+                    });
+                } else {
+                    throw new Error(result.msg || '获取活动详情失败');
+                }
+            })
+            .catch(error => {
+                console.error('加载失败:', error);
+                document.getElementById('contentArea').innerHTML = '<div class="error">加载失败，请稍后重试</div>';
+            });
+        }
+
+        function displayActivityData(data) {
+            document.getElementById('activityTitle').textContent = data.title;
+            document.getElementById('activityGreeting').textContent = data.greetings;
+
+            let contentHTML = `
+                <div class="info-card">
+                    <div class="info-item">
+                        <span class="info-label">活动主题</span>
+                        <span class="info-value">${data.theme}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">活动描述</span>
+                        <span class="info-value">${data.description}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">活动时间</span>
+                        <span class="info-value">${data.time}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">活动地点</span>
+                        <span class="info-value">${data.area}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">活动类型</span>
+                        <span class="info-value">${data.type}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">费用类型</span>
+                        <span class="info-value">${data.charge}</span>
+                    </div>`;
+
+            // 如果有主办方信息，添加到显示中
+            if (data.sponsor) {
+                contentHTML += `
+                    <div class="info-item">
+                        <span class="info-label">主办方</span>
+                        <span class="info-value">${data.sponsor}</span>
+                    </div>`;
+            }
+
+            // 如果有要求信息，添加到显示中
+            if (data.ask) {
+                contentHTML += `
+                    <div class="info-item">
+                        <span class="info-label">活动要求</span>
+                        <span class="info-value">${data.ask}</span>
+                    </div>`;
+            }
+
+            contentHTML += `
+                </div>
+
+                <div class="info-card" style="text-align: center; color: #999; font-size: 14px;">
+                    <p>更多详情请在 App 中查看</p>
+                </div>
+            `;
+
+            document.getElementById('contentArea').innerHTML = contentHTML;
+        }
+
+        // 如果没有活动 ID，显示错误
+        if (!activityId) {
+            document.getElementById('contentArea').innerHTML = '<div class="error">活动 ID 不存在</div>';
+        } else {
+            loadActivityData();
+            tryOpenApp();
+        }
+    </script>
+</body>
+</html>
