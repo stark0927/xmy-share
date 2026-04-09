@@ -150,7 +150,33 @@
         const deepLink = `xmyapp://activity/detail?id=${activityId}`;
 
         // 设置打开 App 按钮
-        document.getElementById('openAppBtn').href = deepLink;
+        const openAppBtn = document.getElementById('openAppBtn');
+        openAppBtn.href = deepLink;
+
+        // 添加点击事件处理
+        openAppBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // 尝试唤起 App
+            window.location.href = deepLink;
+
+            // 备用方案：使用 iframe 尝试唤起
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+
+            // 2秒后移除 iframe
+            setTimeout(function() {
+                document.body.removeChild(iframe);
+            }, 2000);
+
+            // 如果 App 未安装，3秒后提示用户
+            setTimeout(function() {
+                // 这里可以添加下载引导
+                console.log('如果 App 未打开，请确保已安装应用');
+            }, 3000);
+        });
 
         // 页面加载时尝试自动唤起 App（可选）
         function tryOpenApp() {
