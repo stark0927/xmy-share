@@ -228,15 +228,19 @@
         }
     }
 
-    // 检测 App 是否安装
-    function checkAppInstalled(callback) {
+    // 尝试唤起 App
+    function tryOpenApp() {
         const startTime = Date.now();
         let isAppOpened = false;
+        let checkTimer = null;
 
         // 监听页面可见性变化
         const visibilityChangeHandler = function() {
             if (document.hidden) {
                 isAppOpened = true;
+                if (checkTimer) {
+                    clearTimeout(checkTimer);
+                }
             }
         };
 
@@ -252,31 +256,21 @@
         // 尝试唤起 App
         window.location.href = deepLink;
 
-        // 备用方案：使用 iframe 尝试唤起
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = deepLink;
-        document.body.appendChild(iframe);
-
-        // 2.5秒后检测结果
-        setTimeout(function() {
-            document.body.removeChild(iframe);
-
+        // 1.5秒后检测结果（缩短检测时间）
+        checkTimer = setTimeout(function() {
             // 移除事件监听
             document.removeEventListener('visibilitychange', visibilityChangeHandler);
             window.removeEventListener('blur', blurHandler);
             window.removeEventListener('pagehide', blurHandler);
 
-            // 判断 App 是否被唤起
-            const elapsedTime = Date.now() - startTime;
-
-            // 如果页面失去焦点或时间超过预期（说明切换到了 App），认为已安装
-            if (isAppOpened || elapsedTime > 2600) {
-                callback(true);
-            } else {
-                callback(false);
+            // 如果页面没有失去焦点，说明 App 未安装
+            if (!isAppOpened) {
+                // App 未安装，跳转到应用市场下载
+                if (confirm('检测到您尚未安装应用，是否前往下载？')) {
+                    downloadApp();
+                }
             }
-        }, 2500);
+        }, 1500);
     }
 
     // 添加点击事件处理
@@ -289,15 +283,8 @@
             return;
         }
 
-        // 检测并尝试唤起 App
-        checkAppInstalled(function(isInstalled) {
-            if (!isInstalled) {
-                // App 未安装，跳转到应用市场下载
-                if (confirm('检测到您尚未安装应用，是否前往下载？')) {
-                    downloadApp();
-                }
-            }
-        });
+        // 直接尝试唤起 App
+        tryOpenApp();
     });
 
     // 页面加载时尝试自动唤起 App（可选）
