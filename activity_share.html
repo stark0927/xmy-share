@@ -287,13 +287,6 @@
         tryOpenApp();
     });
 
-    // 页面加载时尝试自动唤起 App（可选）
-    function tryOpenApp() {
-        // 在微信中，需要用户主动点击才能唤起
-        // 这里只是设置好链接，不自动跳转
-        console.log('Deep Link:', deepLink);
-    }
-
     // 加载活动数据
     function loadActivityData() {
         // 调用后端 API 获取活动详情
@@ -413,7 +406,6 @@
         document.getElementById('contentArea').innerHTML = '<div class="error">活动 ID 不存在</div>';
     } else {
         loadActivityData();
-        tryOpenApp();
     }
 </script>
 </body>
