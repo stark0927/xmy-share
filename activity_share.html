@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>活动详情</title>
     <style>
@@ -161,210 +162,272 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 id="activityTitle">加载中...</h1>
-            <p id="activityGreeting"></p>
-        </div>
-
-        <div class="content" id="contentArea">
-            <div class="loading">正在加载活动详情...</div>
-        </div>
-
-        <div class="open-app-btn">
-            <a href="#" class="btn" id="openAppBtn">打开 App 查看详情</a>
-        </div>
-
-        <!-- 微信提示蒙层 -->
-        <div class="wechat-tip" id="wechatTip" onclick="this.classList.remove('show')">
-            <div class="wechat-tip-arrow"></div>
-            <div class="wechat-tip-content">
-                <p style="margin: 0; font-weight: 600;">请点击右上角 "..."</p>
-                <p style="margin: 5px 0 0 0;">选择"在浏览器中打开"</p>
-            </div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1 id="activityTitle">加载中...</h1>
+        <p id="activityGreeting"></p>
     </div>
 
-    <script>
-        // 从 URL 获取活动 ID
-        function getQueryParam(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
+    <div class="content" id="contentArea">
+        <div class="loading">正在加载活动详情...</div>
+    </div>
 
-        const activityId = getQueryParam('id');
+    <div class="open-app-btn">
+        <a href="#" class="btn" id="openAppBtn">打开 App 查看详情</a>
+    </div>
 
-        // 构建 Deep Link
-        const deepLink = `xmyapp://activity/detail?id=${activityId}`;
+    <!-- 微信提示蒙层 -->
+    <div class="wechat-tip" id="wechatTip" onclick="this.classList.remove('show')">
+        <div class="wechat-tip-arrow"></div>
+        <div class="wechat-tip-content">
+            <p style="margin: 0; font-weight: 600;">请点击右上角 "..."</p>
+            <p style="margin: 5px 0 0 0;">选择"在浏览器中打开"</p>
+        </div>
+    </div>
+</div>
 
-        // 设置打开 App 按钮
-        const openAppBtn = document.getElementById('openAppBtn');
-        openAppBtn.href = deepLink;
+<script>
+    // 从 URL 获取活动 ID
+    function getQueryParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
 
-        // 检测是否在微信中
-        function isWeChat() {
-            return /MicroMessenger/i.test(navigator.userAgent);
-        }
+    const activityId = getQueryParam('id');
 
-        // 添加点击事件处理
-        openAppBtn.addEventListener('click', function(e) {
-            e.preventDefault();
+    // 构建 Deep Link
+    const deepLink = `xmyapp://activity/detail?id=${activityId}`;
 
-            // 如果在微信中，显示提示
-            if (isWeChat()) {
-                document.getElementById('wechatTip').classList.add('show');
-                return;
-            }
+    // 设置打开 App 按钮
+    const openAppBtn = document.getElementById('openAppBtn');
+    openAppBtn.href = deepLink;
 
-            // 尝试唤起 App
-            window.location.href = deepLink;
+    // 检测是否在微信中
+    function isWeChat() {
+        return /MicroMessenger/i.test(navigator.userAgent);
+    }
 
-            // 备用方案：使用 iframe 尝试唤起
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = deepLink;
-            document.body.appendChild(iframe);
+    // 跳转到应用市场下载
+    function downloadApp() {
+        const ua = navigator.userAgent.toLowerCase();
+        const isIOS = /iphone|ipad|ipod/.test(ua);
+        const isAndroid = /android/.test(ua);
 
-            // 2秒后移除 iframe
-            setTimeout(function() {
-                document.body.removeChild(iframe);
-            }, 2000);
-
-            // 如果 App 未安装，3秒后提示用户
-            setTimeout(function() {
-                // 这里可以添加下载引导
-                console.log('如果 App 未打开，请确保已安装应用');
-            }, 3000);
-        });
-
-        // 页面加载时尝试自动唤起 App（可选）
-        function tryOpenApp() {
-            // 在微信中，需要用户主动点击才能唤起
-            // 这里只是设置好链接，不自动跳转
-            console.log('Deep Link:', deepLink);
-        }
-
-        // 加载活动数据
-        function loadActivityData() {
-            // 调用后端 API 获取活动详情
-            const apiUrl = `https://xmyreq.xmyyl.cn/sps/activityHall/ssai?storeActivityId=${activityId}`;
-
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('网络请求失败');
-                }
-                return response.json();
-            })
-            .then(result => {
-                if (result.success && result.data) {
-                    const data = result.data;
-
-                    // 处理活动类型
-                    let activityType = '线上';
-                    if (data.activityKind === 1) {
-                        activityType = '集体';
-                    } else if (data.activityKind === 2) {
-                        activityType = '入户';
-                    }
-
-                    // 处理费用类型
-                    const chargeType = data.isCharge === 1 ? '付费' : '公益';
-
-                    displayActivityData({
-                        title: data.title || '活动标题',
-                        greetings: data.greetings || '欢迎参加本次活动',
-                        theme: data.realActivityName || '主题活动',
-                        description: data.description || '活动描述',
-                        time: `${data.activityTimeStr || ''} - ${data.activityEndTimeStr || ''}`,
-                        area: data.area || '活动地点',
-                        type: activityType,
-                        charge: chargeType,
-                        sponsor: data.sponsor || '',
-                        ask: data.ask || ''
-                    });
-                } else {
-                    throw new Error(result.msg || '获取活动详情失败');
-                }
-            })
-            .catch(error => {
-                console.error('加载失败:', error);
-                document.getElementById('contentArea').innerHTML = '<div class="error">加载失败，请稍后重试</div>';
-            });
-        }
-
-        function displayActivityData(data) {
-            document.getElementById('activityTitle').textContent = data.title;
-            document.getElementById('activityGreeting').textContent = data.greetings;
-
-            let contentHTML = `
-                <div class="info-card">
-                    <div class="info-item">
-                        <span class="info-label">活动主题</span>
-                        <span class="info-value">${data.theme}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">活动描述</span>
-                        <span class="info-value">${data.description}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">活动时间</span>
-                        <span class="info-value">${data.time}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">活动地点</span>
-                        <span class="info-value">${data.area}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">活动类型</span>
-                        <span class="info-value">${data.type}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">费用类型</span>
-                        <span class="info-value">${data.charge}</span>
-                    </div>`;
-
-            // 如果有主办方信息，添加到显示中
-            if (data.sponsor) {
-                contentHTML += `
-                    <div class="info-item">
-                        <span class="info-label">主办方</span>
-                        <span class="info-value">${data.sponsor}</span>
-                    </div>`;
-            }
-
-            // 如果有要求信息，添加到显示中
-            if (data.ask) {
-                contentHTML += `
-                    <div class="info-item">
-                        <span class="info-label">活动要求</span>
-                        <span class="info-value">${data.ask}</span>
-                    </div>`;
-            }
-
-            contentHTML += `
-                </div>
-
-                <div class="info-card" style="text-align: center; color: #999; font-size: 14px;">
-                    <p>更多详情请在 App 中查看</p>
-                </div>
-            `;
-
-            document.getElementById('contentArea').innerHTML = contentHTML;
-        }
-
-        // 如果没有活动 ID，显示错误
-        if (!activityId) {
-            document.getElementById('contentArea').innerHTML = '<div class="error">活动 ID 不存在</div>';
+        if (isIOS) {
+            // iOS - 跳转到 App Store
+            // 替换为你的 App Store ID
+            window.location.href = 'https://apps.apple.com/cn/app/id你的AppStoreID';
+        } else if (isAndroid) {
+            // Android - 使用 market:// 协议打开手机自带应用商店
+            // 会自动打开华为应用市场、小米应用商店、OPPO软件商店等
+            const packageName = 'com.xmy.xmy_client';
+            window.location.href = `market://details?id=${packageName}`;
         } else {
-            loadActivityData();
-            tryOpenApp();
+            // 其他平台，跳转到官网下载页或提示
+            alert('请在手机浏览器中打开此页面下载应用');
         }
-    </script>
+    }
+
+    // 检测 App 是否安装
+    function checkAppInstalled(callback) {
+        const startTime = Date.now();
+        let isAppOpened = false;
+
+        // 监听页面可见性变化
+        const visibilityChangeHandler = function() {
+            if (document.hidden) {
+                isAppOpened = true;
+            }
+        };
+
+        // 监听页面失去焦点（App 被唤起）
+        const blurHandler = function() {
+            isAppOpened = true;
+        };
+
+        document.addEventListener('visibilitychange', visibilityChangeHandler);
+        window.addEventListener('blur', blurHandler);
+        window.addEventListener('pagehide', blurHandler);
+
+        // 尝试唤起 App
+        window.location.href = deepLink;
+
+        // 备用方案：使用 iframe 尝试唤起
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = deepLink;
+        document.body.appendChild(iframe);
+
+        // 2.5秒后检测结果
+        setTimeout(function() {
+            document.body.removeChild(iframe);
+
+            // 移除事件监听
+            document.removeEventListener('visibilitychange', visibilityChangeHandler);
+            window.removeEventListener('blur', blurHandler);
+            window.removeEventListener('pagehide', blurHandler);
+
+            // 判断 App 是否被唤起
+            const elapsedTime = Date.now() - startTime;
+
+            // 如果页面失去焦点或时间超过预期（说明切换到了 App），认为已安装
+            if (isAppOpened || elapsedTime > 2600) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        }, 2500);
+    }
+
+    // 添加点击事件处理
+    openAppBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // 如果在微信中，显示提示
+        if (isWeChat()) {
+            document.getElementById('wechatTip').classList.add('show');
+            return;
+        }
+
+        // 检测并尝试唤起 App
+        checkAppInstalled(function(isInstalled) {
+            if (!isInstalled) {
+                // App 未安装，跳转到应用市场下载
+                if (confirm('检测到您尚未安装应用，是否前往下载？')) {
+                    downloadApp();
+                }
+            }
+        });
+    });
+
+    // 页面加载时尝试自动唤起 App（可选）
+    function tryOpenApp() {
+        // 在微信中，需要用户主动点击才能唤起
+        // 这里只是设置好链接，不自动跳转
+        console.log('Deep Link:', deepLink);
+    }
+
+    // 加载活动数据
+    function loadActivityData() {
+        // 调用后端 API 获取活动详情
+        const apiUrl = `https://xmyreq.xmyyl.cn/sps/activityHall/ssai?storeActivityId=${activityId}`;
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络请求失败');
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success && result.data) {
+                const data = result.data;
+
+                // 处理活动类型
+                let activityType = '线上';
+                if (data.activityKind === 1) {
+                    activityType = '集体';
+                } else if (data.activityKind === 2) {
+                    activityType = '入户';
+                }
+
+                // 处理费用类型
+                const chargeType = data.isCharge === 1 ? '付费' : '公益';
+
+                displayActivityData({
+                    title: data.title || '活动标题',
+                    greetings: data.greetings || '欢迎参加本次活动',
+                    theme: data.realActivityName || '主题活动',
+                    description: data.description || '活动描述',
+                    time: `${data.activityTimeStr || ''} - ${data.activityEndTimeStr || ''}`,
+                    area: data.area || '活动地点',
+                    type: activityType,
+                    charge: chargeType,
+                    sponsor: data.sponsor || '',
+                    ask: data.ask || ''
+                });
+            } else {
+                throw new Error(result.msg || '获取活动详情失败');
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            document.getElementById('contentArea').innerHTML = '<div class="error">加载失败，请稍后重试</div>';
+        });
+    }
+
+    function displayActivityData(data) {
+        document.getElementById('activityTitle').textContent = data.title;
+        document.getElementById('activityGreeting').textContent = data.greetings;
+
+        let contentHTML = `
+            <div class="info-card">
+                <div class="info-item">
+                    <span class="info-label">活动主题</span>
+                    <span class="info-value">${data.theme}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">活动描述</span>
+                    <span class="info-value">${data.description}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">活动时间</span>
+                    <span class="info-value">${data.time}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">活动地点</span>
+                    <span class="info-value">${data.area}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">活动类型</span>
+                    <span class="info-value">${data.type}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">费用类型</span>
+                    <span class="info-value">${data.charge}</span>
+                </div>`;
+
+        // 如果有主办方信息，添加到显示中
+        if (data.sponsor) {
+            contentHTML += `
+                <div class="info-item">
+                    <span class="info-label">主办方</span>
+                    <span class="info-value">${data.sponsor}</span>
+                </div>`;
+        }
+
+        // 如果有要求信息，添加到显示中
+        if (data.ask) {
+            contentHTML += `
+                <div class="info-item">
+                    <span class="info-label">活动要求</span>
+                    <span class="info-value">${data.ask}</span>
+                </div>`;
+        }
+
+        contentHTML += `
+            </div>
+
+            <div class="info-card" style="text-align: center; color: #999; font-size: 14px;">
+                <p>更多详情请在 App 中查看</p>
+            </div>
+        `;
+
+        document.getElementById('contentArea').innerHTML = contentHTML;
+    }
+
+    // 如果没有活动 ID，显示错误
+    if (!activityId) {
+        document.getElementById('contentArea').innerHTML = '<div class="error">活动 ID 不存在</div>';
+    } else {
+        loadActivityData();
+        tryOpenApp();
+    }
+</script>
 </body>
 </html>
